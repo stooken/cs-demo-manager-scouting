@@ -19,7 +19,6 @@ export type MatchHeatmapFilter = {
 };
 
 export type TeamHeatmapFilter = {
-  windowSeconds?: number;
   seasonMaps?: { checksum: string; steamIds: string[] }[];
   demoTypes: DemoType[];
   endDate: string | undefined;

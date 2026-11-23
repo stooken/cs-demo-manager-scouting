@@ -10,7 +10,7 @@ import { demoRenamed } from 'csdm/ui/demos/demos-actions';
 import { fetchTeamError, fetchTeamStart, fetchTeamSuccess, selectedMatchesChanged } from './team-actions';
 import { RadarLevel } from 'csdm/ui/maps/radar-level';
 import { HeatmapEvent } from 'csdm/common/types/heatmap-event';
-import { blurChanged, fetchPointsSuccess, opacityChanged, radiusChanged } from './heatmap/team-heatmap-actions';
+import { blurChanged, filtersChanged, opacityChanged, radiusChanged } from './heatmap/team-heatmap-actions';
 import type { PlayerResult } from 'csdm/common/types/search/player-result';
 import { isDefuseMapFromName } from 'csdm/common/counter-strike/is-defuse-map-from-name';
 
@@ -43,7 +43,7 @@ const initialState: TeamState = {
     radius: 14,
     blur: 20,
     alpha: 1,
-    event: HeatmapEvent.Kills,
+    event: HeatmapEvent.Positions,
     radarLevel: RadarLevel.Upper,
     sides: [],
     players: [],
@@ -123,7 +123,7 @@ export const teamReducer = createReducer(initialState, (builder) => {
     .addCase(radiusChanged, (state, action) => {
       state.heatmap.radius = action.payload;
     })
-    .addCase(fetchPointsSuccess, (state, action) => {
+    .addCase(filtersChanged, (state, action) => {
       if (state.heatmap.mapName !== action.payload.mapName) {
         state.heatmap.radarLevel = RadarLevel.Upper;
       } else {

@@ -53,8 +53,8 @@ export function SeasonLinks() {
         <Trans>Imported seasons</Trans>
       </summary>
       {seasons.map((s) => (
-        <p key={seasonPath(s, 'heatmap')}>
-          <Link className="underline" to={seasonPath(s, 'heatmap')}>
+        <p key={seasonPath(s, 'round-heatmap')}>
+          <Link className="underline" to={seasonPath(s, 'round-heatmap')}>
             {s.teamName} · {s.seasonName}
           </Link>
         </p>
@@ -100,18 +100,18 @@ export function SeasonWorkspace() {
           {season.teamName} · {season.seasonName}
         </strong>
         <Link
-          aria-current={view === 'heatmap' ? 'page' : undefined}
-          className="underline"
-          to={seasonPath(season, 'heatmap')}
-        >
-          <Trans>Heatmap</Trans>
-        </Link>
-        <Link
           aria-current={view === 'round-heatmap' ? 'page' : undefined}
           className="underline"
           to={seasonPath(season, 'round-heatmap')}
         >
-          <Trans>Round heatmap</Trans>
+          <Trans>Round playback</Trans>
+        </Link>
+        <Link
+          aria-current={view === 'heatmap' ? 'page' : undefined}
+          className="underline"
+          to={seasonPath(season, 'heatmap')}
+        >
+          <Trans>Compare rounds</Trans>
         </Link>
         <Link
           aria-current={view === 'scouting' ? 'page' : undefined}
@@ -184,8 +184,7 @@ export function SeasonWorkspace() {
       ) : (
         <TeamHeatmapView
           key={seasonPath(season, 'heatmap') + season.maps.map((m) => m.checksum).join(',')}
-          teamName={season.teamName}
-          season={season}
+          fixtures={season.maps}
           mapNames={mapNames}
         />
       )}

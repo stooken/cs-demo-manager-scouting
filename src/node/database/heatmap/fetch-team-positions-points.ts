@@ -5,7 +5,10 @@ import type { RoundEventPoint } from './team-heatmap-timeline';
 import { db } from 'csdm/node/database/database';
 import { visitPositionSamplePoints } from 'csdm/node/database/player-position-samples/read-position-sample-points';
 
-export async function fetchTeamPositionsPoints(filters: TeamHeatmapFilter): Promise<RoundEventPoint[]> {
+export async function fetchTeamPositionsPoints(
+  filters: TeamHeatmapFilter,
+  sampledRounds?: Set<string>,
+): Promise<RoundEventPoint[]> {
   let query = db
     .selectFrom('player_position_samples')
     .select([
@@ -81,6 +84,7 @@ export async function fetchTeamPositionsPoints(filters: TeamHeatmapFilter): Prom
 
   const points: RoundEventPoint[] = [];
   for (const row of rows) {
+    if (row.ticks.byteLength) sampledRounds?.add(row.match_checksum + '/' + row.round_number);
     visitPositionSamplePoints(
       row,
       {

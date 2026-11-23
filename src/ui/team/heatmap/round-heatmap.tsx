@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { Game } from 'csdm/common/types/counter-strike';
+import { TeamBuySelect, useHeatmapBuyLabel } from './team-buy-select';
+import { Game, TeamNumber, type EconomyType } from 'csdm/common/types/counter-strike';
 import { HeatmapEvent } from 'csdm/common/types/heatmap-event';
 import type { ImportedSeason } from 'csdm/common/types/imported-season';
 import type { HeatmapRound, RoundHeatmapData, RoundHeatmapRequest } from 'csdm/common/types/team-heatmap-timeline';
@@ -23,7 +24,7 @@ import { useHeatmapState } from './use-heatmap-state';
 import { getRoundWindow } from './round-window';
 import { WindowLengthInput } from './window-length-input';
 
-type MatchOption = Pick<RoundHeatmapRequest, 'checksum' | 'mapName' | 'steamIds'> & {
+type MatchOption = Pick<RoundHeatmapRequest, 'checksum' | 'mapName' | 'steamIds' | 'teamName'> & {
   game: Game;
   date: string;
   opponent: string;
@@ -41,6 +42,7 @@ export function TeamRoundHeatmap() {
     () =>
       team.matches.map((match) => ({
         ...match,
+        teamName: team.name,
         opponent: match.teamAName === team.name ? match.teamBName : match.teamAName,
         steamIds: match.players.filter((p) => p.teamName === team.name).map((p) => p.steamId),
       })),
@@ -106,13 +108,16 @@ function SingleMatchHeatmap({
   const maps = useMaps();
   const { radius, alpha, blur } = useHeatmapState();
   const [radarLevel, setRadarLevel] = useState<RadarLevel>(RadarLevel.Upper);
+  const [buy, setBuy] = useState<EconomyType | 'all'>('all');
+  const buyLabel = useHeatmapBuyLabel();
   const [number, setNumber] = useState<number>();
-  const [cursor, setCursor] = useState(0);
+  const [cursor, setCursor] = useState(seconds);
   const generation = useRef(0);
   const thresholdZ = maps.find((map) => map.name === match.mapName && map.game === match.game)?.thresholdZ ?? null;
   const request = useMemo(
     () => ({
       checksum: match.checksum,
+      teamName: match.teamName,
       mapName: match.mapName,
       steamIds: match.steamIds,
       event,
@@ -140,7 +145,8 @@ function SingleMatchHeatmap({
     return () => controller.abort();
   }, [reload]);
   const data = result?.request === request ? result.data : undefined;
-  const round = data?.rounds.find((r) => r.number === number) ?? data?.rounds[0];
+  const rounds = data?.rounds.filter((r) => buy === 'all' || r.economy === buy) ?? [];
+  const round = rounds.find((r) => r.number === number) ?? rounds[0];
   const window = round && getRoundWindow(round, cursor, seconds);
   return (
     <Content>
@@ -155,16 +161,32 @@ function SingleMatchHeatmap({
           points={window?.points ?? []}
           fetchPoints={reload}
         >
-          <HeatmapFilters>
+          <HeatmapFilters scrollable={true}>
             {matchSelect}
+            <TeamBuySelect
+              value={buy}
+              onChange={(value) => {
+                setBuy(value);
+                setCursor(seconds);
+              }}
+            />
             {round && data && (
               <Select
                 label={<Trans>Round</Trans>}
                 value={round.number}
-                options={data.rounds.map(({ number }) => ({ value: number, label: t`Round ${number}` }))}
+                options={rounds.map(({ number, economy, side }) => ({
+                  value: number,
+                  label: [
+                    t`Round ${number}`,
+                    side === TeamNumber.CT ? 'CT' : side === TeamNumber.T ? 'T' : '',
+                    buyLabel(economy),
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
+                }))}
                 onChange={(n) => {
                   setNumber(n);
-                  setCursor(0);
+                  setCursor(seconds);
                 }}
               />
             )}
@@ -178,7 +200,7 @@ function SingleMatchHeatmap({
             <WindowLengthInput seconds={seconds} onChange={setSeconds} />
             {window && round && data && round.duration !== null && (
               <RoundScrubber
-                key={round.number}
+                key={round.number + buy}
                 window={window}
                 round={round}
                 clockSeconds={data.clockSeconds}
@@ -202,7 +224,15 @@ function SingleMatchHeatmap({
             <p>
               <Trans>Loading round heatmap…</Trans>
             </p>
-          ) : !round || round.duration === null ? (
+          ) : !round ? (
+            <p>
+              <Trans>No rounds match this buy.</Trans>
+            </p>
+          ) : round.hasPositionSamples === false ? (
+            <p>
+              <Trans>No positions were recorded for this team in this round.</Trans>
+            </p>
+          ) : round.duration === null ? (
             <p>
               <Trans>Round timing unavailable.</Trans>
             </p>
@@ -228,56 +258,62 @@ function RoundScrubber({
 }) {
   const { t } = useLingui();
   const [playing, setPlaying] = useState(false);
-  const { start, end, lastStart, points } = slice;
+  const { start, end, duration, points } = slice;
   useEffect(() => {
     if (!playing) return;
     const timer = window.setTimeout(() => {
-      if (start >= lastStart) setPlaying(false);
-      else onSeek(start + 1);
+      if (end >= duration) setPlaying(false);
+      else onSeek(Math.min(duration, end + 1));
     }, 1000);
     return () => window.clearTimeout(timer);
-  }, [playing, start, lastStart, onSeek]);
+  }, [playing, end, duration, onSeek]);
   const clockAt = (second: number) => {
     if (round.plantSeconds !== null && second >= round.plantSeconds) {
       const time = formatMillisecondsToTimer((second - round.plantSeconds) * 1000);
       return t`After plant ${time}`;
     }
-    const time = formatMillisecondsToTimer(Math.max(0, clockSeconds - second) * 1000);
+    const time = formatMillisecondsToTimer(Math.ceil(Math.max(0, clockSeconds - second)) * 1000);
     return t`Round clock ${time}`;
   };
-  const from = formatMillisecondsToTimer(start * 1000);
-  const to = formatMillisecondsToTimer(end * 1000);
   const count = points.length;
+  const clock = clockAt(end);
+  const plant = round.plantSeconds;
   return (
     <>
       <label className="flex flex-col gap-y-8">
-        <span>
-          <Trans>Time since freeze end</Trans>
-        </span>
+        <strong className="tabular-nums">{clock}</strong>
         <input
           type="range"
           min={0}
-          max={lastStart}
+          max={Math.ceil(duration)}
           step={1}
-          value={start}
-          aria-valuetext={from}
+          value={Math.ceil(end)}
+          aria-label={t`Round playback clock`}
+          aria-valuetext={clock}
           onChange={(event) => {
             setPlaying(false);
-            onSeek(event.target.valueAsNumber);
+            onSeek(Math.min(duration, event.target.valueAsNumber));
           }}
         />
       </label>
-      <div className="tabular-nums">
-        {from} – {to} · <Trans>{count} points</Trans>
-      </div>
-      <div>
-        {clockAt(start)} → {clockAt(end)}
-      </div>
+      <p className="tabular-nums">
+        {clockAt(start)} → {clock} · <Trans>{count} points</Trans>
+      </p>
+      {plant !== null && (
+        <Button
+          onClick={() => {
+            setPlaying(false);
+            onSeek(plant);
+          }}
+        >
+          <Trans>Jump to plant</Trans>
+        </Button>
+      )}
       <div>
         <Button
-          isDisabled={lastStart === 0}
+          isDisabled={duration === 0}
           onClick={() => {
-            if (!playing && start === lastStart) onSeek(0);
+            if (!playing && end === duration) onSeek(0);
             setPlaying(!playing);
           }}
         >

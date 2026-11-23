@@ -46,17 +46,11 @@ function buildImageBase64() {
   if (radarCanvas === null) {
     throw new Error('Radar canvas is not initialized');
   }
-  const heatmapCanvas = document.getElementById('heatmap-canvas') as HTMLCanvasElement | null;
-  if (heatmapCanvas === null) {
-    throw new Error('Heatmap canvas is not initialized');
-  }
-
   const canvas = document.createElement('canvas');
   canvas.width = radarCanvas.width;
   canvas.height = radarCanvas.height;
   const context = canvas.getContext('2d') as CanvasRenderingContext2D;
   context.drawImage(radarCanvas, 0, 0);
-  context.drawImage(heatmapCanvas, 0, 0);
 
   const croppedCanvas = cropCanvasTransparentAreas(canvas);
 

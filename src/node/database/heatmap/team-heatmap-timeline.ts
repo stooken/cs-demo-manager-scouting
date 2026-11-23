@@ -1,11 +1,6 @@
 import type { Point } from 'csdm/common/types/point';
-import type {
-  HeatmapFrame,
-  HeatmapRound,
-  RoundHeatmapData,
-  TeamHeatmapTimeline,
-} from 'csdm/common/types/team-heatmap-timeline';
-import type { RoundEndReason } from 'csdm/common/types/counter-strike';
+import type { HeatmapRoster, HeatmapRound, RoundHeatmapData } from 'csdm/common/types/team-heatmap-timeline';
+import type { EconomyType, TeamNumber, RoundEndReason } from 'csdm/common/types/counter-strike';
 import { db } from 'csdm/node/database/database';
 import { getRoundDurationSeconds } from 'csdm/node/database/match/get-round-duration-seconds';
 
@@ -20,82 +15,13 @@ type RoundClock = {
   plantTick: number | null;
   tickrate: number;
   gameMode: string;
+  teamA: string;
+  teamB: string;
+  economyA: EconomyType;
+  economyB: EconomyType;
+  sideA: TeamNumber;
+  sideB: TeamNumber;
 };
-
-export function buildTeamHeatmapTimeline(
-  events: RoundEventPoint[],
-  rounds: RoundClock[],
-  windowSeconds = 10,
-): TeamHeatmapTimeline {
-  if (!Number.isSafeInteger(windowSeconds) || windowSeconds < 1) throw new RangeError('Invalid heatmap window');
-  const byMatch = new Map<string, Map<number, RoundClock>>();
-  let maxPostPlant = 0;
-  let hasPlant = false;
-  for (const round of rounds) {
-    if (
-      round.tickrate <= 0 ||
-      round.number < 1 ||
-      round.freezeTimeEndTick <= 0 ||
-      round.endTick < round.freezeTimeEndTick
-    )
-      continue;
-    let match = byMatch.get(round.checksum);
-    if (!match) {
-      match = new Map();
-      byMatch.set(round.checksum, match);
-    }
-    match.set(round.number, round);
-    if (round.plantTick !== null && round.plantTick >= round.freezeTimeEndTick && round.plantTick <= round.endTick) {
-      hasPlant = true;
-      maxPostPlant = Math.max(maxPostPlant, (round.endTick - round.plantTick) / round.tickrate);
-    }
-  }
-
-  const clocks = new Map<string, number>();
-  let maxClock = 0;
-  for (const [checksum, match] of byMatch) {
-    const matchRounds = [...match.values()];
-    const { tickrate, gameMode } = matchRounds[0];
-    const duration = getRoundDurationSeconds(matchRounds, tickrate, gameMode);
-    clocks.set(checksum, duration);
-    maxClock = Math.max(maxClock, duration);
-  }
-  const frames: HeatmapFrame[] = [];
-  for (let start = maxClock; start > 0; start -= windowSeconds) {
-    frames.push({ phase: 'round', startSeconds: start, endSeconds: Math.max(0, start - windowSeconds), points: [] });
-  }
-  const prePlantFrames = frames.length;
-  if (hasPlant) {
-    for (let start = 0; start < Math.max(1, maxPostPlant); start += windowSeconds) {
-      frames.push({
-        phase: 'post-plant',
-        startSeconds: start,
-        endSeconds: Math.min(start + windowSeconds, Math.ceil(maxPostPlant)),
-        points: [],
-      });
-    }
-  }
-
-  const outsideClock: Point[] = [];
-  for (const { x, y, match_checksum, round_number, tick } of events) {
-    const round = byMatch.get(match_checksum)?.get(round_number);
-    const clock = clocks.get(match_checksum);
-    if (!round || clock === undefined || tick < round.freezeTimeEndTick || tick > round.endTick) {
-      outsideClock.push({ x, y });
-      continue;
-    }
-    if (round.plantTick !== null && round.plantTick >= round.freezeTimeEndTick && tick >= round.plantTick) {
-      const elapsed = (tick - round.plantTick) / round.tickrate;
-      const index = prePlantFrames + Math.floor(elapsed / windowSeconds);
-      frames[Math.min(index, frames.length - 1)].points.push({ x, y });
-    } else {
-      const elapsed = (tick - round.freezeTimeEndTick) / round.tickrate;
-      const index = Math.floor((maxClock - clock + elapsed) / windowSeconds);
-      frames[Math.min(index, prePlantFrames - 1)].points.push({ x, y });
-    }
-  }
-  return { frames, outsideClock };
-}
 
 export async function fetchHeatmapRounds(checksums: string[]) {
   return db
@@ -105,6 +31,12 @@ export async function fetchHeatmapRounds(checksums: string[]) {
     .select([
       'rounds.match_checksum as checksum',
       'rounds.number',
+      'rounds.team_a_name as teamA',
+      'rounds.team_b_name as teamB',
+      'rounds.team_a_economy_type as economyA',
+      'rounds.team_b_economy_type as economyB',
+      'rounds.team_a_side as sideA',
+      'rounds.team_b_side as sideB',
       'rounds.freeze_time_end_tick as freezeTimeEndTick',
       'rounds.end_tick as endTick',
       'rounds.end_reason as endReason',
@@ -124,22 +56,26 @@ export async function fetchHeatmapRounds(checksums: string[]) {
     .execute();
 }
 
-export async function fetchTeamHeatmapTimeline(events: RoundEventPoint[], windowSeconds?: number) {
-  const checksums = [...new Set(events.map((event) => event.match_checksum))];
-  if (checksums.length === 0) return { frames: [], outsideClock: [] };
-  return buildTeamHeatmapTimeline(events, await fetchHeatmapRounds(checksums), windowSeconds);
-}
-
-export function buildRoundHeatmap(checksum: string, clocks: RoundClock[], events: RoundEventPoint[]): RoundHeatmapData {
+export function buildRoundHeatmap(
+  { checksum, teamName }: Pick<HeatmapRoster, 'checksum' | 'teamName'>,
+  clocks: RoundClock[],
+  events: RoundEventPoint[],
+  sampledRounds?: Set<string>,
+): RoundHeatmapData {
   const byNumber = new Map<number, { clock: RoundClock; round: HeatmapRound }>();
   const matchRounds = clocks.filter((r) => r.checksum === checksum && r.number > 0);
   for (const clock of matchRounds) {
     const { number, tickrate, freezeTimeEndTick, endTick, plantTick } = clock;
     const valid = tickrate > 0 && freezeTimeEndTick > 0 && endTick >= freezeTimeEndTick;
+    const isA = Boolean(teamName) && teamName === clock.teamA;
+    const isB = Boolean(teamName) && teamName === clock.teamB;
     byNumber.set(number, {
       clock,
       round: {
         number,
+        hasPositionSamples: sampledRounds?.has(checksum + '/' + number),
+        economy: isA === isB ? null : isA ? clock.economyA : clock.economyB,
+        side: isA === isB ? null : isA ? clock.sideA : clock.sideB,
         duration: valid ? (endTick - freezeTimeEndTick) / tickrate : null,
         plantSeconds:
           valid && plantTick !== null && plantTick >= freezeTimeEndTick && plantTick <= endTick

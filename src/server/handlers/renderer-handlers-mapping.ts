@@ -187,11 +187,7 @@ import {
 } from 'csdm/node/database/scouting/imported-seasons';
 import { fetchSeasonPace } from 'csdm/node/database/scouting/fetch-season-pace';
 import type { ImportedSeason, PaceRound } from 'csdm/common/types/imported-season';
-import type {
-  TeamHeatmapTimeline,
-  RoundHeatmapRequest,
-  RoundHeatmapData,
-} from 'csdm/common/types/team-heatmap-timeline';
+import type { HeatmapRoster, RoundHeatmapRequest, RoundHeatmapData } from 'csdm/common/types/team-heatmap-timeline';
 import {
   fetchTeamHeatmapTimelineHandler,
   fetchRoundHeatmapHandler,
@@ -266,7 +262,10 @@ export interface RendererMessageHandlers {
   [RendererClientMessageName.ConfirmSeasonRoster]: Handler<SeasonReview, void>;
   [RendererClientMessageName.FetchImportedSeasons]: Handler<void, ImportedSeason[]>;
   [RendererClientMessageName.FetchSeasonPace]: Handler<Pick<ImportedSeason, 'teamId' | 'seasonId'>, PaceRound[]>;
-  [RendererClientMessageName.FetchTeamHeatmapTimeline]: Handler<TeamHeatmapFilter, TeamHeatmapTimeline>;
+  [RendererClientMessageName.FetchTeamHeatmapTimeline]: Handler<
+    Omit<TeamHeatmapFilter, 'seasonMaps'> & { seasonMaps: HeatmapRoster[] },
+    RoundHeatmapData[]
+  >;
   [RendererClientMessageName.FetchRoundHeatmap]: Handler<RoundHeatmapRequest, RoundHeatmapData>;
   [RendererClientMessageName.FetchTeamHeatmapPoints]: Handler<TeamHeatmapFilter, Point[]>;
   [RendererClientMessageName.FetchPlayerHeatmapPoints]: Handler<PlayerHeatmapFilter, Point[]>;

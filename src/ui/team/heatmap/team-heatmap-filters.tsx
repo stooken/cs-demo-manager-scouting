@@ -16,23 +16,21 @@ import { HeatmapSelectMap } from 'csdm/ui/components/heatmap/heatmap-select-map'
 import { ResetZoomButton } from 'csdm/ui/components/heatmap/reset-zoom-button';
 import { SearchPlayersInput } from 'csdm/ui/search/filters/search-players-input';
 
-export function TeamHeatmapFilters({ mapNames, children }: { mapNames: string[]; children: React.ReactNode }) {
+export function TeamHeatmapFilters({
+  mapNames,
+  children,
+  density,
+}: {
+  density: boolean;
+  mapNames: string[];
+  children: React.ReactNode;
+}) {
   const dispatch = useDispatch();
   const { mapName, game, radarLevel, fetchPoints } = useHeatmapContext<Partial<TeamHeatmapFilter>>();
   const { sides, event, players } = useHeatmapState();
 
   return (
-    <HeatmapFilters>
-      <HeatmapInputRadius
-        onChange={(radius) => {
-          dispatch(radiusChanged(radius));
-        }}
-      />
-      <HeatmapInputBlur
-        onChange={(blur) => {
-          dispatch(blurChanged(blur));
-        }}
-      />
+    <HeatmapFilters scrollable={true}>
       <HeatmapInputOpacity
         onChange={(opacity) => {
           dispatch(opacityChanged(opacity));
@@ -72,6 +70,20 @@ export function TeamHeatmapFilters({ mapNames, children }: { mapNames: string[];
           await fetchPoints({ sides });
         }}
       />
+      {density && (
+        <>
+          <HeatmapInputRadius
+            onChange={(radius) => {
+              dispatch(radiusChanged(radius));
+            }}
+          />
+          <HeatmapInputBlur
+            onChange={(blur) => {
+              dispatch(blurChanged(blur));
+            }}
+          />
+        </>
+      )}
       <div className="flex flex-wrap gap-x-8">
         <ResetZoomButton />
         <ExportHeatmapButton />

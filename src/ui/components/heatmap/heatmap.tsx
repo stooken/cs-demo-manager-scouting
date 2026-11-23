@@ -14,7 +14,10 @@ import { RadarLevel } from 'csdm/ui/maps/radar-level';
 import type { Point } from 'csdm/common/types/point';
 import { ResetHeatmapZoom } from './heatmap-events';
 
+import { coverageCellSize, coverageBands, type RoundCoverage } from './round-coverage';
+
 type HeatmapCanvasProps = {
+  coverage?: RoundCoverage;
   map: Map;
   game: Game;
   points: Point[];
@@ -24,7 +27,7 @@ type HeatmapCanvasProps = {
   radarLevel: RadarLevel;
 };
 
-function HeatmapCanvas({ map, game, points, alpha, blur, radius, radarLevel }: HeatmapCanvasProps) {
+function HeatmapCanvas({ coverage, map, game, points, alpha, blur, radius, radarLevel }: HeatmapCanvasProps) {
   const heatmapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const heatmapRendererRef = useRef<HeatmapRenderer | null>(null);
 
@@ -38,12 +41,36 @@ function HeatmapCanvas({ map, game, points, alpha, blur, radius, radarLevel }: H
         return;
       }
 
-      if (!heatmapRendererRef.current) {
+      if (
+        !heatmapRendererRef.current ||
+        heatmapCanvas.width !== interactiveCanvas.canvasSize.width ||
+        heatmapCanvas.height !== interactiveCanvas.canvasSize.height
+      ) {
         heatmapCanvas.width = interactiveCanvas.canvasSize.width;
         heatmapCanvas.height = interactiveCanvas.canvasSize.height;
         heatmapRendererRef.current = new HeatmapRenderer(heatmapCanvas);
       }
 
+      if (coverage) {
+        const overlay = heatmapCanvas.getContext('2d');
+        if (!overlay) return;
+        overlay.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+        overlay.globalAlpha = alpha * 0.8;
+        const screenX = (x: number) => interactiveCanvas.zoomedX(getScaledCoordinateX(map, map.radarSize, x));
+        const screenY = (y: number) => interactiveCanvas.zoomedY(getScaledCoordinateY(map, map.radarSize, y));
+        for (const cell of coverage.cells) {
+          const share = cell.rounds / coverage.eligible;
+          const band = coverageBands.find((b) => share >= b.minimum);
+          if (!band) continue;
+          overlay.fillStyle = band.color;
+          const x = screenX(cell.x);
+          const y = screenY(cell.y + coverageCellSize);
+          overlay.fillRect(x, y, screenX(cell.x + coverageCellSize) - x, screenY(cell.y) - y);
+        }
+        overlay.globalAlpha = 1;
+        context.drawImage(heatmapCanvas, 0, 0);
+        return;
+      }
       const scaledPoints: HeatmapPoint[] = points.map((point) => {
         const x = interactiveCanvas.zoomedX(getScaledCoordinateX(map, map.radarSize, point.x));
         const y = interactiveCanvas.zoomedY(getScaledCoordinateY(map, map.radarSize, point.y));
@@ -78,10 +105,10 @@ function HeatmapCanvas({ map, game, points, alpha, blur, radius, radarLevel }: H
   );
 }
 
-export function Heatmap({ showEmptyMap = false }: { showEmptyMap?: boolean } = {}) {
+export function Heatmap({ showEmptyMap = false, coverage }: { showEmptyMap?: boolean; coverage?: RoundCoverage } = {}) {
   const { alpha, blur, radius, points, mapName, game, radarLevel } = useHeatmapContext();
   const maps = useMaps();
-  const map = maps.find((map) => map.name === mapName);
+  const map = maps.find((map) => map.name === mapName && map.game === game) ?? maps.find((map) => map.name === mapName);
 
   if (mapName === '') {
     return <Message message={<Trans>Select a map.</Trans>} />;
@@ -97,6 +124,7 @@ export function Heatmap({ showEmptyMap = false }: { showEmptyMap?: boolean } = {
 
   return (
     <HeatmapCanvas
+      coverage={coverage}
       map={map}
       game={game}
       points={points}

@@ -264,7 +264,6 @@ msgstr "Loading ban stats…"
 #: src/ui/settings/ui/reset-tables-state.tsx
 #: src/ui/settings/video/ffmpeg/ffmpeg-location.tsx
 #: src/ui/settings/video/hlae/hlae-location.tsx
-#: src/ui/team/heatmap/team-heatmap.tsx
 #: src/ui/videos/use-remove-videos.tsx
 #: src/ui/videos/video-entry.tsx
 msgid "An error occurred"
@@ -4409,7 +4408,6 @@ msgstr "Players"
 
 #: src/ui/match/match-tabs.tsx
 #: src/ui/player/player-tabs.tsx
-#: src/ui/team/team-tabs.tsx
 msgctxt "Tab link"
 msgid "Heatmap"
 msgstr "Heatmap"
@@ -8624,31 +8622,20 @@ msgid "Round outcomes by economy type"
 msgstr "Round outcomes by economy type"
 
 #: src/ui/team/heatmap/round-clock-control.tsx
-msgid "After plant {start} → {end}"
-msgstr "After plant {start} → {end}"
-
-#: src/ui/team/heatmap/round-clock-control.tsx
 msgid "Round clock {start} → {end}"
 msgstr "Round clock {start} → {end}"
 
 #: src/ui/team/heatmap/round-clock-control.tsx
-msgid "Round timeline"
-msgstr "Round timeline"
+msgid "After plant {start} → {end}"
+msgstr "After plant {start} → {end}"
 
 #: src/ui/team/heatmap/round-clock-control.tsx
-#: src/ui/team/heatmap/round-heatmap.tsx
-msgid "{count} points"
-msgstr "{count} points"
+msgid "Compare at"
+msgstr "Compare at"
 
 #: src/ui/team/heatmap/round-clock-control.tsx
-#: src/ui/team/heatmap/round-heatmap.tsx
-msgid "Pause"
-msgstr "Pause"
-
-#: src/ui/team/heatmap/round-clock-control.tsx
-#: src/ui/team/heatmap/round-heatmap.tsx
-msgid "Play"
-msgstr "Play"
+msgid "Whole live round"
+msgstr "Whole live round"
 
 #: src/ui/team/heatmap/round-heatmap.tsx
 msgid "No matches available."
@@ -8668,16 +8655,27 @@ msgid "Round {number}"
 msgstr "Round {number}"
 
 #: src/ui/team/heatmap/round-heatmap.tsx
+#: src/ui/team/heatmap/team-heatmap.tsx
 msgid "Could not load round heatmap."
 msgstr "Could not load round heatmap."
 
 #: src/ui/team/heatmap/round-heatmap.tsx
+#: src/ui/team/heatmap/team-heatmap.tsx
 msgid "Retry"
 msgstr "Retry"
 
 #: src/ui/team/heatmap/round-heatmap.tsx
+#: src/ui/team/heatmap/team-heatmap.tsx
 msgid "Loading round heatmap…"
 msgstr "Loading round heatmap…"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "No rounds match this buy."
+msgstr "No rounds match this buy."
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "No positions were recorded for this team in this round."
+msgstr "No positions were recorded for this team in this round."
 
 #: src/ui/team/heatmap/round-heatmap.tsx
 msgid "Round timing unavailable."
@@ -8692,12 +8690,72 @@ msgid "Round clock {time}"
 msgstr "Round clock {time}"
 
 #: src/ui/team/heatmap/round-heatmap.tsx
-msgid "Time since freeze end"
-msgstr "Time since freeze end"
+msgid "Round playback clock"
+msgstr "Round playback clock"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "{count} points"
+msgstr "{count} points"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Jump to plant"
+msgstr "Jump to plant"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Pause"
+msgstr "Pause"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Play"
+msgstr "Play"
+
+#: src/ui/team/heatmap/team-buy-select.tsx
+msgid "Rifle (full buy)"
+msgstr "Rifle (full buy)"
+
+#: src/ui/team/heatmap/team-buy-select.tsx
+msgid "Unknown buy"
+msgstr "Unknown buy"
+
+#: src/ui/team/heatmap/team-buy-select.tsx
+msgid "Scouted team's buy"
+msgstr "Scouted team's buy"
+
+#: src/ui/team/heatmap/team-buy-select.tsx
+msgid "All buys"
+msgstr "All buys"
 
 #: src/ui/team/heatmap/team-heatmap.tsx
-msgid "{mapName} · {mapCount} maps · {roundCount} rounds before event filters"
-msgstr "{mapName} · {mapCount} maps · {roundCount} rounds before event filters"
+msgid "Game"
+msgstr "Game"
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "Map colors"
+msgstr "Map colors"
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "Share of eligible rounds"
+msgstr "Share of eligible rounds"
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "Point density"
+msgstr "Point density"
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "Share of eligible rounds with activity in each 128-unit square"
+msgstr "Share of eligible rounds with activity in each 128-unit square"
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "{eligible} eligible rounds in this window · {matching} match the filters"
+msgstr "{eligible} eligible rounds in this window · {matching} match the filters"
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "{missingSamples} rounds lack recorded positions. "
+msgstr "{missingSamples} rounds lack recorded positions. "
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "{observed} rounds with activity · {count} points"
+msgstr "{observed} rounds with activity · {count} points"
 
 #: src/ui/team/heatmap/window-length-input.tsx
 msgid "Window length (seconds)"
@@ -8892,12 +8950,12 @@ msgid "Teams"
 msgstr "Teams"
 
 #: src/ui/team/scouting/season-workspace.tsx
-msgid "Heatmap"
-msgstr "Heatmap"
+msgid "Round playback"
+msgstr "Round playback"
 
 #: src/ui/team/scouting/season-workspace.tsx
-msgid "Round heatmap"
-msgstr "Round heatmap"
+msgid "Compare rounds"
+msgstr "Compare rounds"
 
 #: src/ui/team/scouting/season-workspace.tsx
 msgid "Scouting"
@@ -8929,8 +8987,13 @@ msgstr "No resolved maps."
 
 #: src/ui/team/team-tabs.tsx
 msgctxt "Tab link"
-msgid "Round heatmap"
-msgstr "Round heatmap"
+msgid "Round playback"
+msgstr "Round playback"
+
+#: src/ui/team/team-tabs.tsx
+msgctxt "Tab link"
+msgid "Compare rounds"
+msgstr "Compare rounds"
 
 #: src/ui/team/team-tabs.tsx
 msgctxt "Tab link"

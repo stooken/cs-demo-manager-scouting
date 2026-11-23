@@ -1,14 +1,19 @@
 import { expect, it } from 'vite-plus/test';
 import { getRoundWindow } from './round-window';
 
-it('slides by one second independently of width, with a closed final tick only at round end', () => {
+it('shows only the recent history of this phase, including the plant and final ticks', () => {
   const round = {
     number: 7,
+    economy: null,
+    side: null,
     duration: 22.5,
-    plantSeconds: 12,
-    points: [9.99, 10, 14.99, 15, 20, 22.5].map((seconds) => ({ x: 0, y: 0, seconds })),
+    plantSeconds: 12.25,
+    points: [0, 4, 5, 9, 9.1, 12.24, 12.25, 13, 22.5].map((seconds) => ({ x: 0, y: 0, seconds })),
   };
-  expect(getRoundWindow(round, 10, 5).points.map((p) => p.seconds)).toEqual([10, 14.99]);
-  expect(getRoundWindow(round, 11, 10).points.map((p) => p.seconds)).toEqual([14.99, 15, 20]);
-  expect(getRoundWindow(round, 30, 1)).toMatchObject({ start: 22, end: 22.5, points: [{ seconds: 22.5 }] });
+  const at = (cursor: number) => getRoundWindow(round, cursor, 5).points.map((p) => p.seconds);
+  expect(at(0)).toEqual([0]);
+  expect(at(9)).toEqual([5, 9]);
+  expect(at(12.25)).toEqual([12.25]);
+  expect(at(13)).toEqual([12.25, 13]);
+  expect(at(99)).toEqual([22.5]);
 });

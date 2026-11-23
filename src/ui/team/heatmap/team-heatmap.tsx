@@ -1,172 +1,222 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Trans } from '@lingui/react/macro';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Heatmap } from 'csdm/ui/components/heatmap/heatmap';
 import { Content } from 'csdm/ui/components/content';
-import { useTeamProfileSettings } from 'csdm/ui/settings/use-team-profile-settings';
-import { Game } from 'csdm/common/types/counter-strike';
+import { Game, type EconomyType } from 'csdm/common/types/counter-strike';
 import { useHeatmapState } from './use-heatmap-state';
 import { useWebSocketClient } from 'csdm/ui/hooks/use-web-socket-client';
-import { useCurrentTeamName } from '../use-current-team-name';
 import type { TeamHeatmapFilter } from 'csdm/common/types/heatmap-filters';
 import { RendererClientMessageName } from 'csdm/server/messages/renderer-client-message-name';
-import type { TeamHeatmapTimeline } from 'csdm/common/types/team-heatmap-timeline';
+import type { HeatmapRoster, RoundHeatmapData } from 'csdm/common/types/team-heatmap-timeline';
 import { RoundClockControl } from './round-clock-control';
 import { TeamHeatmapFilters } from './team-heatmap-filters';
-import { useShowToast } from 'csdm/ui/components/toasts/use-show-toast';
 import { HeatmapProvider } from 'csdm/ui/components/heatmap/heatmap-provider';
 import { useDispatch } from 'csdm/ui/store/use-dispatch';
-import { fetchPointsSuccess } from './team-heatmap-actions';
+import { filtersChanged } from './team-heatmap-actions';
 import { useTeam } from '../use-team';
-import type { ImportedSeason } from 'csdm/common/types/imported-season';
 import { RadarLevel } from 'csdm/ui/maps/radar-level';
 import { useMaps } from 'csdm/ui/maps/use-maps';
+import { TeamBuySelect } from './team-buy-select';
+import { compareRounds, getComparisonWindows } from './round-comparison';
+import { coverageBands } from 'csdm/ui/components/heatmap/round-coverage';
+import { Select } from 'csdm/ui/components/inputs/select';
+import { Button } from 'csdm/ui/components/buttons/button';
+
+type ScoutingMap = HeatmapRoster & { mapName: string; game?: Game };
 
 export function TeamHeatmap() {
-  const teamName = useCurrentTeamName();
-  const { mapsStats } = useTeam();
-  return <TeamHeatmapView teamName={teamName} mapNames={mapsStats.map((m) => m.mapName)} />;
+  const team = useTeam();
+  const fixtures = useMemo(
+    () =>
+      team.matches.map((match) => ({
+        checksum: match.checksum,
+        mapName: match.mapName,
+        game: match.game,
+        teamName: team.name,
+        steamIds: match.players.filter((player) => player.teamName === team.name).map((player) => player.steamId),
+      })),
+    [team],
+  );
+  return <TeamHeatmapView fixtures={fixtures} mapNames={team.mapsStats.map((m) => m.mapName)} />;
 }
 
-export function TeamHeatmapView({
-  teamName,
-  mapNames,
-  season,
-}: {
-  teamName: string;
-  mapNames: string[];
-  season?: ImportedSeason;
-}) {
-  const showToast = useShowToast();
+export function TeamHeatmapView({ mapNames, fixtures }: { mapNames: string[]; fixtures: ScoutingMap[] }) {
+  const { t } = useLingui();
   const dispatch = useDispatch();
-  const { games, tagIds, demoSources, demoTypes, startDate, endDate, gameModes, maxRounds } = useTeamProfileSettings();
-  const game = !season && games.includes(Game.CSGO) ? Game.CSGO : Game.CS2;
   const client = useWebSocketClient();
-  const generation = useRef(0);
-  const { alpha, blur, radius, event, sides, mapName: savedMap, radarLevel, players } = useHeatmapState();
-  const mapName = season && !mapNames.includes(savedMap) ? mapNames[0] : savedMap;
-  const [timeline, setTimeline] = useState<TeamHeatmapTimeline>({ frames: [], outsideClock: [] });
-  const [frameIndex, setFrameIndex] = useState<number | null>(null);
-  const [windowSeconds, setWindowSeconds] = useState(10);
-  const wholeRound = useMemo(
-    () => [...timeline.outsideClock, ...timeline.frames.flatMap((frame) => frame.points)],
-    [timeline],
-  );
-  const frame = frameIndex === null ? undefined : timeline.frames[frameIndex];
-  const isInitialRender = useRef(true);
   const maps = useMaps();
-
-  const fetchPoints = async (filters?: Partial<TeamHeatmapFilter>) => {
-    const version = ++generation.current;
-    try {
-      const newMapName = filters?.mapName ?? mapName;
-      const map = maps.find((map) => {
-        return map.name === newMapName && map.game === game;
-      });
-      const payload: TeamHeatmapFilter = {
-        windowSeconds: filters?.windowSeconds ?? windowSeconds,
-        demoTypes,
-        endDate,
-        event: filters?.event ?? event,
-        gameModes,
-        games,
-        mapName: newMapName,
-        maxRounds,
-        players: filters?.players ?? players,
-        radarLevel: filters?.radarLevel ?? (newMapName !== savedMap ? RadarLevel.Upper : radarLevel),
-        sides: filters?.sides ?? sides,
-        sources: demoSources,
-        startDate,
-        tagIds,
-        teamName,
-        ...(season
-          ? {
-              seasonMaps: season.maps
-                .filter((m) => m.mapName === newMapName)
-                .map(({ checksum, steamIds }) => ({ checksum, steamIds })),
-              games: [Game.CS2],
-              sources: [],
-              demoTypes: [],
-              gameModes: [],
-              tagIds: [],
-              maxRounds: [],
-              startDate: undefined,
-              endDate: undefined,
-            }
-          : {}),
-        thresholdZ: map?.thresholdZ ?? null,
-      };
-      const timeline = await client.send({
-        name: RendererClientMessageName.FetchTeamHeatmapTimeline,
-        payload,
-      });
-
-      if (version !== generation.current) return;
-      setTimeline(timeline);
-      setWindowSeconds(payload.windowSeconds ?? 10);
-      setFrameIndex((index) => {
-        if (index === null || !timeline.frames.length) return null;
-        if (filters?.windowSeconds && frame) {
-          const sameTime = timeline.frames.findIndex(
-            (f) =>
-              f.phase === frame.phase &&
-              (f.phase === 'round'
-                ? f.startSeconds >= frame.startSeconds && f.endSeconds < frame.startSeconds
-                : f.startSeconds <= frame.startSeconds && f.endSeconds > frame.startSeconds),
-          );
-          if (sameTime >= 0) return sameTime;
-        }
-        return Math.min(index, timeline.frames.length - 1);
-      });
-      dispatch(fetchPointsSuccess(payload));
-    } catch (error) {
-      showToast({
-        content: <Trans>An error occurred</Trans>,
-        id: 'heatmap-error',
-        type: 'error',
-      });
-    }
-  };
-
+  const { alpha, blur, radius, event, sides, mapName: savedMap, radarLevel, players } = useHeatmapState();
+  const mapName = mapNames.includes(savedMap) ? savedMap : (mapNames[0] ?? '');
+  const games = [...new Set(fixtures.filter((m) => m.mapName === mapName).map((m) => m.game ?? Game.CS2))];
+  const [selectedGame, setGame] = useState<Game>(Game.CS2);
+  const game = games.includes(selectedGame) ? selectedGame : (games[0] ?? Game.CS2);
+  const level = mapName === savedMap ? radarLevel : RadarLevel.Upper;
+  const thresholdZ = maps.find((map) => map.name === mapName && map.game === game)?.thresholdZ ?? null;
+  const [metric, setMetric] = useState<'coverage' | 'points'>('coverage');
+  const [buy, setBuy] = useState<EconomyType | 'all'>('all');
+  const [windowKey, setWindowKey] = useState('all');
+  const [width, setWidth] = useState(10);
+  const [attempt, setAttempt] = useState(0);
+  const request = useMemo(
+    () => ({
+      mapName,
+      event,
+      radarLevel: level,
+      thresholdZ,
+      players,
+      sides,
+      seasonMaps: fixtures
+        .filter(
+          (m) =>
+            m.mapName === mapName &&
+            (m.game ?? Game.CS2) === game &&
+            m.steamIds.length &&
+            (!players.length || players.some((p) => m.steamIds.includes(p.steamId))),
+        )
+        .map(({ checksum, teamName, steamIds }) => ({ checksum, teamName, steamIds })),
+      teamName: '',
+      games: [],
+      sources: [],
+      demoTypes: [],
+      gameModes: [],
+      maxRounds: [],
+      tagIds: [],
+      startDate: undefined,
+      endDate: undefined,
+    }),
+    [mapName, event, level, thresholdZ, players, sides, fixtures, game],
+  );
+  const [result, setResult] = useState<{ request: typeof request; matches: RoundHeatmapData[] | null }>();
   useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      void fetchPoints();
-    }
-  });
-
-  const selectedMaps = season?.maps.filter((m) => m.mapName === mapName) ?? [];
-  const mapCount = selectedMaps.length;
-  const roundCount = selectedMaps.reduce((n, m) => n + m.rounds, 0);
+    let active = true;
+    client.send({ name: RendererClientMessageName.FetchTeamHeatmapTimeline, payload: request }).then(
+      (matches) => {
+        if (active) setResult({ request, matches: Array.isArray(matches) ? matches : null });
+      },
+      () => {
+        if (active) setResult({ request, matches: null });
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [client, request, attempt]);
+  const matches = result?.request === request ? result.matches : undefined;
+  const windows = useMemo(() => getComparisonWindows(matches ?? [], width), [matches, width]);
+  const selected = windows.find((w) => w.phase + w.start === windowKey);
+  const { points, matching, eligible, observed, missingSamples, coverage } = useMemo(
+    () => compareRounds(matches ?? [], buy, sides, selected),
+    [matches, buy, sides, selected],
+  );
+  const count = points.length;
+  const changeFilters = (filters?: Partial<TeamHeatmapFilter>) => {
+    dispatch(filtersChanged({ mapName, event, sides, radarLevel: level, players, ...filters }));
+    return Promise.resolve();
+  };
   return (
     <Content>
-      {season && (
-        <p>
-          <Trans>
-            {mapName} · {mapCount} maps · {roundCount} rounds before event filters
-          </Trans>
-        </p>
-      )}
       <div className="flex h-full">
         <HeatmapProvider
           game={game}
           mapName={mapName}
-          points={frame?.points ?? wholeRound}
-          radarLevel={radarLevel}
+          points={points}
+          radarLevel={level}
           alpha={alpha}
           blur={blur}
           radius={radius}
-          fetchPoints={fetchPoints}
+          fetchPoints={changeFilters}
         >
-          <TeamHeatmapFilters mapNames={mapNames}>
+          <TeamHeatmapFilters mapNames={mapNames} density={metric === 'points'}>
+            {games.length > 1 && (
+              <Select
+                label={<Trans>Game</Trans>}
+                value={game}
+                onChange={setGame}
+                options={games.map((value) => ({
+                  value,
+                  label: value === Game.CSGO ? 'CS:GO' : value === Game.CS2LT ? 'CS2 LT' : 'CS2',
+                }))}
+              />
+            )}
+            <TeamBuySelect value={buy} onChange={setBuy} />
             <RoundClockControl
-              frames={timeline.frames}
-              index={frameIndex}
-              onChange={setFrameIndex}
-              windowSeconds={windowSeconds}
-              onWindowChange={(windowSeconds) => void fetchPoints({ windowSeconds })}
+              windows={windows}
+              value={selected ? windowKey : 'all'}
+              onChange={setWindowKey}
+              width={width}
+              setWidth={(value) => {
+                setWidth(value);
+                const window =
+                  selected &&
+                  getComparisonWindows(matches ?? [], value).find(
+                    (w) =>
+                      w.phase === selected.phase &&
+                      (w.phase === 'round'
+                        ? w.start >= selected.start && selected.start > w.end
+                        : w.start <= selected.start && selected.start < w.end),
+                  );
+                setWindowKey(window ? window.phase + window.start : 'all');
+              }}
             />
+            <Select<'coverage' | 'points'>
+              label={<Trans>Map colors</Trans>}
+              value={metric}
+              onChange={setMetric}
+              options={[
+                { value: 'coverage', label: t`Share of eligible rounds` },
+                { value: 'points', label: t`Point density` },
+              ]}
+            />
+            {metric === 'coverage' && (
+              <div>
+                <p>
+                  <Trans>Share of eligible rounds with activity in each 128-unit square</Trans>
+                </p>
+                <div className="flex gap-x-8 tabular-nums">
+                  {coverageBands.toReversed().map((band, i) => (
+                    <span key={band.minimum} className="flex items-center gap-x-4">
+                      <span className="size-12" style={{ backgroundColor: band.color }} />
+                      {['<25%', '25–<50%', '50–<75%', '≥75%'][i]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {matches && (
+              <div className="tabular-nums">
+                <p>
+                  <Trans>
+                    {eligible} eligible rounds in this window · {matching} match the filters
+                  </Trans>
+                </p>
+                <p>
+                  {missingSamples > 0 && <Trans>{missingSamples} rounds lack recorded positions. </Trans>}
+                  <Trans>
+                    {observed} rounds with activity · {count} points
+                  </Trans>
+                </p>
+              </div>
+            )}
           </TeamHeatmapFilters>
-          <Heatmap showEmptyMap={Boolean(frame)} />
+          {matches === null ? (
+            <div role="alert">
+              <Trans>Could not load round heatmap.</Trans>
+              <Button
+                onClick={() => {
+                  setResult(undefined);
+                  setAttempt((n) => n + 1);
+                }}
+              >
+                <Trans>Retry</Trans>
+              </Button>
+            </div>
+          ) : !matches ? (
+            <p>
+              <Trans>Loading round heatmap…</Trans>
+            </p>
+          ) : (
+            <Heatmap showEmptyMap={true} coverage={metric === 'coverage' ? coverage : undefined} />
+          )}
         </HeatmapProvider>
       </div>
     </Content>

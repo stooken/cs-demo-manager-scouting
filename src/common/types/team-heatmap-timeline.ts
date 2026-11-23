@@ -2,10 +2,12 @@ import type { Point } from './point';
 import type { HeatmapEvent } from './heatmap-event';
 import type { RadarLevel } from 'csdm/ui/maps/radar-level';
 
-export type RoundHeatmapRequest = {
-  checksum: string;
+import type { EconomyType, TeamNumber } from './counter-strike';
+
+export type HeatmapRoster = { checksum: string; steamIds: string[]; teamName: string };
+
+export type RoundHeatmapRequest = HeatmapRoster & {
   mapName: string;
-  steamIds: string[];
   event: HeatmapEvent;
   radarLevel: RadarLevel;
   thresholdZ: number | null;
@@ -13,22 +15,12 @@ export type RoundHeatmapRequest = {
 
 export type HeatmapRound = {
   number: number;
+  hasPositionSamples?: boolean;
+  economy: EconomyType | null;
+  side: TeamNumber | null;
   duration: number | null;
   plantSeconds: number | null;
   points: (Point & { seconds: number })[];
 };
 
 export type RoundHeatmapData = { clockSeconds: number; rounds: HeatmapRound[] };
-
-export type HeatmapFrame = {
-  phase: 'round' | 'post-plant';
-  startSeconds: number;
-  endSeconds: number;
-  points: Point[];
-};
-
-export type TeamHeatmapTimeline = {
-  frames: HeatmapFrame[];
-  // Warmup, freeze time, after the win, or missing round timing. Keep these in the whole-round view.
-  outsideClock: Point[];
-};
