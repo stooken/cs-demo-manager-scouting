@@ -47,7 +47,9 @@ import { Team } from 'csdm/ui/team/team';
 import { TeamOverview } from 'csdm/ui/team/overview/team-overview';
 import { TeamMatchesTable } from './team/matches/team-matches-table';
 import { TeamMaps } from './team/maps/team-maps';
+import { SeasonWorkspace } from './team/scouting/season-workspace';
 import { TeamHeatmap } from './team/heatmap/team-heatmap';
+import { TeamRoundHeatmap } from './team/heatmap/round-heatmap';
 import { Videos } from './videos/videos';
 import { FiveEPlayLastMatches } from './downloads/five-eplay/5eplay-last-matches';
 import { TeamPerformance } from './team/performance/team-performance';
@@ -98,11 +100,13 @@ export const router = createHashRouter(
         <Route path={RoutePath.PlayerRank} element={<PlayerRank />} />
         <Route path={RoutePath.PlayerMatches} element={<PlayerMatchesTable />} />
       </Route>
+      <Route path="/teams/imported/:teamId/:seasonId/:view" element={<SeasonWorkspace />} />
       <Route path={RoutePath.Teams} element={<Teams />} />
       <Route path={`${RoutePath.Teams}/:name`} element={<Team />}>
         <Route index={true} element={<TeamOverview />} />
         <Route path={RoutePath.TeamMaps} element={<TeamMaps />} />
         <Route path={RoutePath.TeamHeatmap} element={<TeamHeatmap />} />
+        <Route path={RoutePath.TeamRoundHeatmap} element={<TeamRoundHeatmap />} />
         <Route path={RoutePath.TeamPerformance} element={<TeamPerformance />} />
         <Route path={RoutePath.TeamMatches} element={<TeamMatchesTable />} />
       </Route>

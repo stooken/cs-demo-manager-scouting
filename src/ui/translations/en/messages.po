@@ -5000,6 +5000,7 @@ msgid "Watch round"
 msgstr "Watch round"
 
 #: src/ui/match/rounds/overview/rounds-history.tsx
+#: src/ui/team/heatmap/round-heatmap.tsx
 msgid "Round"
 msgstr "Round"
 
@@ -8622,6 +8623,86 @@ msgstr "Full"
 msgid "Round outcomes by economy type"
 msgstr "Round outcomes by economy type"
 
+#: src/ui/team/heatmap/round-clock-control.tsx
+msgid "After plant {start} → {end}"
+msgstr "After plant {start} → {end}"
+
+#: src/ui/team/heatmap/round-clock-control.tsx
+msgid "Round clock {start} → {end}"
+msgstr "Round clock {start} → {end}"
+
+#: src/ui/team/heatmap/round-clock-control.tsx
+msgid "Round timeline"
+msgstr "Round timeline"
+
+#: src/ui/team/heatmap/round-clock-control.tsx
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "{count} points"
+msgstr "{count} points"
+
+#: src/ui/team/heatmap/round-clock-control.tsx
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Pause"
+msgstr "Pause"
+
+#: src/ui/team/heatmap/round-clock-control.tsx
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Play"
+msgstr "Play"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "No matches available."
+msgstr "No matches available."
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Match"
+msgstr "Match"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Part {part}"
+msgstr "Part {part}"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Round {number}"
+msgstr "Round {number}"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Could not load round heatmap."
+msgstr "Could not load round heatmap."
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Retry"
+msgstr "Retry"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Loading round heatmap…"
+msgstr "Loading round heatmap…"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Round timing unavailable."
+msgstr "Round timing unavailable."
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "After plant {time}"
+msgstr "After plant {time}"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Round clock {time}"
+msgstr "Round clock {time}"
+
+#: src/ui/team/heatmap/round-heatmap.tsx
+msgid "Time since freeze end"
+msgstr "Time since freeze end"
+
+#: src/ui/team/heatmap/team-heatmap.tsx
+msgid "{mapName} · {mapCount} maps · {roundCount} rounds before event filters"
+msgstr "{mapName} · {mapCount} maps · {roundCount} rounds before event filters"
+
+#: src/ui/team/heatmap/window-length-input.tsx
+msgid "Window length (seconds)"
+msgstr "Window length (seconds)"
+
 #: src/ui/team/load-team-error.tsx
 msgid "This team is not in any analyzed demos."
 msgstr "This team is not in any analyzed demos."
@@ -8721,9 +8802,135 @@ msgctxt "Panel title"
 msgid "Side"
 msgstr "Side"
 
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Could not load scouting data."
+msgstr "Could not load scouting data."
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Loading rounds…"
+msgstr "Loading rounds…"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "T-side medians from freeze-time end"
+msgstr "T-side medians from freeze-time end"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Entry requires two living attackers in the same engine-named bombsite. A suspected fake requires enemy damage during coordinated pressure without the carrier for {pressureSeconds} seconds, then the carrier and another attacker at the other site within {switchSeconds} seconds."
+msgstr "Entry requires two living attackers in the same engine-named bombsite. A suspected fake requires enemy damage during coordinated pressure without the carrier for {pressureSeconds} seconds, then the carrier and another attacker at the other site within {switchSeconds} seconds."
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "First enemy damage"
+msgstr "First enemy damage"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Committed entry"
+msgstr "Committed entry"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Plant"
+msgstr "Plant"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "{count} rounds"
+msgstr "{count} rounds"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Suspected fake rate"
+msgstr "Suspected fake rate"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "{flaggedCount} flagged / {eligible} eligible T rounds"
+msgstr "{flaggedCount} flagged / {eligible} eligible T rounds"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Round {round} · pressure at {from} at {pressureTime} s → bomb commit at {to} at {commitTime} s"
+msgstr "Round {round} · pressure at {from} at {pressureTime} s → bomb commit at {to} at {commitTime} s"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "{excludedCount} rounds excluded from fake rate"
+msgstr "{excludedCount} rounds excluded from fake rate"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Round {round}"
+msgstr "Round {round}"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Site data unavailable"
+msgstr "Site data unavailable"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Position data unavailable"
+msgstr "Position data unavailable"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Ambiguous team side"
+msgstr "Ambiguous team side"
+
+#: src/ui/team/scouting/season-scouting.tsx
+msgid "Incomplete round clock"
+msgstr "Incomplete round clock"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Could not read imported seasons."
+msgstr "Could not read imported seasons."
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Imported seasons"
+msgstr "Imported seasons"
+
+#: src/ui/team/scouting/season-workspace.tsx
 #: src/ui/team/team-loader.tsx
 msgid "Loading team…"
 msgstr "Loading team…"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Imported season unavailable."
+msgstr "Imported season unavailable."
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Teams"
+msgstr "Teams"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Heatmap"
+msgstr "Heatmap"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Round heatmap"
+msgstr "Round heatmap"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Scouting"
+msgstr "Scouting"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "{reviewCount} maps excluded for review"
+msgstr "{reviewCount} maps excluded for review"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Check that the analyzed map exists and the fixture roster identifies a single team."
+msgstr "Check that the analyzed map exists and the fixture roster identifies a single team."
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Could not confirm the roster. Reopen the season and try again."
+msgstr "Could not confirm the roster. Reopen the season and try again."
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Inspect match"
+msgstr "Inspect match"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "Use {name}"
+msgstr "Use {name}"
+
+#: src/ui/team/scouting/season-workspace.tsx
+msgid "No resolved maps."
+msgstr "No resolved maps."
+
+#: src/ui/team/team-tabs.tsx
+msgctxt "Tab link"
+msgid "Round heatmap"
+msgstr "Round heatmap"
 
 #: src/ui/team/team-tabs.tsx
 msgctxt "Tab link"

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useFetchTeams } from './use-fetch-teams';
 import { TeamsTableProvider } from './table/teams-table-provider';
 import { TeamsTable } from './teams-table';
+import { SeasonLinks } from '../team/scouting/season-workspace';
 import { TeamsActionBar } from './teams-action-bar';
 
 export function Teams() {
@@ -18,6 +19,7 @@ export function Teams() {
   return (
     <TeamsTableProvider>
       <TeamsActionBar />
+      <SeasonLinks />
       <TeamsTable />
     </TeamsTableProvider>
   );

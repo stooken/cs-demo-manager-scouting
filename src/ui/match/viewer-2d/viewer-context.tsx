@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import type { BombDefused } from 'csdm/common/types/bomb-defused';
 import type { BombPlanted } from 'csdm/common/types/bomb-planted';
 import type { BombExploded } from 'csdm/common/types/bomb-exploded';
@@ -181,7 +181,17 @@ export function ViewerProvider({
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('pen');
   const [drawingSize, setDrawingSize] = useState(2);
   const [drawingColor, setDrawingColor] = useState('#ff0000');
-  const [currentTick, setCurrentTick] = useState(round.freezetimeEndTick);
+  const [searchParams] = useSearchParams();
+  const [currentTick, setCurrentTick] = useState(() => {
+    const value = searchParams.get('tick');
+    const tick = Number(value);
+    return value !== null &&
+      Number.isInteger(tick) &&
+      tick >= round.freezetimeEndTick &&
+      tick <= round.endOfficiallyTick
+      ? tick
+      : round.freezetimeEndTick;
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [lowerRadarOffsetX, setLowerRadarOffsetX] = useState(() => {
     const value = window.localStorage.getItem(`${match.game}_${match.mapName}_lower_radar_offset_x`);

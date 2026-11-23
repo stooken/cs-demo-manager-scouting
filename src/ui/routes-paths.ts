@@ -31,6 +31,7 @@ export const RoutePath = {
   Ban: '/ban',
   Teams: '/teams',
   TeamHeatmap: 'heatmap',
+  TeamRoundHeatmap: 'round-heatmap',
   TeamMatches: 'matches',
   TeamPerformance: 'performance',
   TeamMaps: 'maps',

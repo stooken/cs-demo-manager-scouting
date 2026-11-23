@@ -204,7 +204,7 @@ export class AnalyzeCommand extends Command {
     if (this.isJsonOutput) {
       output.json({
         analyzed: analyzedDemos,
-        skipped: skippedDemoPaths.map((demoPath) => ({ demoPath })),
+        skipped: skippedDemoPaths.map((demoPath) => ({ demoPath, checksum: result.skippedChecksums?.[demoPath] })),
         failed: failedDemos.map(({ demoPath, details }) => ({ demoPath, error: details })),
       });
     }

@@ -3,6 +3,7 @@ import type { Demo } from 'csdm/common/types/demo';
 import type { HandlerContext } from 'csdm/server/messages/handler';
 import { getDemoFromFilePath } from 'csdm/node/demo/get-demo-from-file-path';
 import { fetchMatchChecksums } from 'csdm/node/database/matches/fetch-match-checksums';
+import { db } from 'csdm/node/database/database';
 import { analysesListener } from 'csdm/server/analyses-listener';
 import { ensureDatabaseConnection } from 'csdm/server/ensure-database-connection';
 import { server } from 'csdm/server/server';
@@ -19,6 +20,7 @@ export type AddDemoPathsToAnalysesPayload = {
 export type AddDemoPathsToAnalysesResult = {
   addedDemos: { checksum: string; demoPath: string }[];
   skippedDemoPaths: string[];
+  skippedChecksums: Record<string, string>;
   unsupportedDemos: { demoPath: string; source: DemoSource; reason: 'source' | 'pov' }[];
 };
 
@@ -31,6 +33,7 @@ export async function addDemoPathsToAnalysesHandler(
     const checksums = await fetchMatchChecksums();
     const demos: Demo[] = [];
     const addedDemos: AddDemoPathsToAnalysesResult['addedDemos'] = [];
+    const skippedChecksums: Record<string, string> = {};
     const skippedDemoPaths: string[] = [];
     const unsupportedDemos: AddDemoPathsToAnalysesResult['unsupportedDemos'] = [];
     for (const demoPath of payload.demoPaths) {
@@ -47,8 +50,19 @@ export async function addDemoPathsToAnalysesHandler(
         continue;
       }
       if (!payload.force && checksums.includes(demo.checksum)) {
-        skippedDemoPaths.push(demoPath);
-        continue;
+        const positions = payload.analyzePositions
+          ? await db
+              .selectFrom('player_positions')
+              .select('round_number')
+              .where('match_checksum', '=', demo.checksum)
+              .limit(1)
+              .executeTakeFirst()
+          : true;
+        if (positions) {
+          skippedDemoPaths.push(demoPath);
+          skippedChecksums[demoPath] = demo.checksum;
+          continue;
+        }
       }
       // The same demo may be given several times (duplicated path argument or identical copies in different folders),
       // queue it only once.
@@ -66,7 +80,7 @@ export async function addDemoPathsToAnalysesHandler(
     // Queueing them now would analyze demos no client waits for.
     if (context?.clientId !== undefined && !server.isCliClientConnected(context.clientId)) {
       logger.warn('The CLI client disconnected before its demos were queued for analysis, ignoring them');
-      return { addedDemos: [], skippedDemoPaths, unsupportedDemos };
+      return { addedDemos: [], skippedDemoPaths, skippedChecksums, unsupportedDemos };
     }
 
     // ! Not awaited: it would resolve only once the whole analyses queue completed and the CLI request would
@@ -81,7 +95,7 @@ export async function addDemoPathsToAnalysesHandler(
         logger.error(error);
       });
 
-    return { addedDemos, skippedDemoPaths, unsupportedDemos };
+    return { addedDemos, skippedDemoPaths, skippedChecksums, unsupportedDemos };
   } catch (error) {
     return handleError(error, 'Error while adding demo paths to analyses');
   }

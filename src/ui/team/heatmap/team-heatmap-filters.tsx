@@ -12,19 +12,14 @@ import { useHeatmapState } from './use-heatmap-state';
 import { HeatmapSelectEvent } from 'csdm/ui/components/heatmap/heatmap-select-event';
 import type { TeamHeatmapFilter } from 'csdm/common/types/heatmap-filters';
 import { HeatmapFilters } from 'csdm/ui/components/heatmap/heatmap-filters';
-import { useTeam } from 'csdm/ui/team/use-team';
 import { HeatmapSelectMap } from 'csdm/ui/components/heatmap/heatmap-select-map';
 import { ResetZoomButton } from 'csdm/ui/components/heatmap/reset-zoom-button';
 import { SearchPlayersInput } from 'csdm/ui/search/filters/search-players-input';
 
-export function TeamHeatmapFilters() {
+export function TeamHeatmapFilters({ mapNames, children }: { mapNames: string[]; children: React.ReactNode }) {
   const dispatch = useDispatch();
   const { mapName, game, radarLevel, fetchPoints } = useHeatmapContext<Partial<TeamHeatmapFilter>>();
   const { sides, event, players } = useHeatmapState();
-  const { mapsStats } = useTeam();
-  const mapNames = mapsStats.map(({ mapName }) => {
-    return mapName;
-  });
 
   return (
     <HeatmapFilters>
@@ -50,6 +45,7 @@ export function TeamHeatmapFilters() {
           await fetchPoints({ event });
         }}
       />
+      {children}
       <SearchPlayersInput
         isDisabled={false}
         selectedPlayers={players}

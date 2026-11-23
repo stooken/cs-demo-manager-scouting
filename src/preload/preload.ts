@@ -266,6 +266,14 @@ const api: PreloadApi = {
     };
   },
 
+  onNavigateToSeason: (callback: (path: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, path: string) => callback(path);
+    ipcRenderer.on(IPCChannel.NavigateToSeason, listener);
+    return () => {
+      ipcRenderer.off(IPCChannel.NavigateToSeason, listener);
+    };
+  },
+
   onNavigateToBans: (callback: () => void) => {
     ipcRenderer.addListener(IPCChannel.NavigateToBans, callback);
 

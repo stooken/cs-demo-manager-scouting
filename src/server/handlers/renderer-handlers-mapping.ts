@@ -180,7 +180,23 @@ import { fetchTeamsTableHandler } from './renderer-process/team/fetch-teams-tabl
 import { fetchTeamHandler } from './renderer-process/team/fetch-team-handler';
 import type { TeamFilters } from 'csdm/node/database/team/team-filters';
 import type { TeamProfile } from 'csdm/common/types/team-profile';
-import { fetchTeamHeatmapPointsHandler } from './renderer-process/team/fetch-team-heatmap-points-handler';
+import {
+  fetchImportedSeasons,
+  confirmSeasonRoster,
+  type SeasonReview,
+} from 'csdm/node/database/scouting/imported-seasons';
+import { fetchSeasonPace } from 'csdm/node/database/scouting/fetch-season-pace';
+import type { ImportedSeason, PaceRound } from 'csdm/common/types/imported-season';
+import type {
+  TeamHeatmapTimeline,
+  RoundHeatmapRequest,
+  RoundHeatmapData,
+} from 'csdm/common/types/team-heatmap-timeline';
+import {
+  fetchTeamHeatmapTimelineHandler,
+  fetchRoundHeatmapHandler,
+  fetchTeamHeatmapPointsHandler,
+} from './renderer-process/team/fetch-team-heatmap-points-handler';
 import {
   updateMatchesTeamNamesHandler,
   type MatchesTeamNamesUpdatedPayload,
@@ -247,6 +263,11 @@ export interface RendererMessageHandlers {
   [RendererClientMessageName.FetchMatchesTable]: Handler<FetchMatchesTablePayload, MatchTable[]>;
   [RendererClientMessageName.FetchMatchByChecksum]: Handler<string, Match>;
   [RendererClientMessageName.FetchMatchHeatmapPoints]: Handler<MatchHeatmapFilter, Point[]>;
+  [RendererClientMessageName.ConfirmSeasonRoster]: Handler<SeasonReview, void>;
+  [RendererClientMessageName.FetchImportedSeasons]: Handler<void, ImportedSeason[]>;
+  [RendererClientMessageName.FetchSeasonPace]: Handler<Pick<ImportedSeason, 'teamId' | 'seasonId'>, PaceRound[]>;
+  [RendererClientMessageName.FetchTeamHeatmapTimeline]: Handler<TeamHeatmapFilter, TeamHeatmapTimeline>;
+  [RendererClientMessageName.FetchRoundHeatmap]: Handler<RoundHeatmapRequest, RoundHeatmapData>;
   [RendererClientMessageName.FetchTeamHeatmapPoints]: Handler<TeamHeatmapFilter, Point[]>;
   [RendererClientMessageName.FetchPlayerHeatmapPoints]: Handler<PlayerHeatmapFilter, Point[]>;
   [RendererClientMessageName.Fetch2DViewerData]: Handler<Fetch2dViewerDataPayload, Fetch2dViewerDataSuccessPayload>;
@@ -378,6 +399,11 @@ export const rendererHandlers: RendererMessageHandlers = {
   [RendererClientMessageName.FetchMatchesTable]: fetchMatchesTableHandler,
   [RendererClientMessageName.FetchMatchByChecksum]: fetchMatchByChecksumHandler,
   [RendererClientMessageName.FetchMatchHeatmapPoints]: fetchMatchHeatmapPointsHandler,
+  [RendererClientMessageName.ConfirmSeasonRoster]: confirmSeasonRoster,
+  [RendererClientMessageName.FetchImportedSeasons]: fetchImportedSeasons,
+  [RendererClientMessageName.FetchSeasonPace]: fetchSeasonPace,
+  [RendererClientMessageName.FetchTeamHeatmapTimeline]: fetchTeamHeatmapTimelineHandler,
+  [RendererClientMessageName.FetchRoundHeatmap]: fetchRoundHeatmapHandler,
   [RendererClientMessageName.FetchTeamHeatmapPoints]: fetchTeamHeatmapPointsHandler,
   [RendererClientMessageName.FetchPlayerHeatmapPoints]: fetchPlayerHeatmapPointsHandler,
   [RendererClientMessageName.Fetch2DViewerData]: fetch2DViewerDataHandler,

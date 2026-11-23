@@ -1,16 +1,17 @@
+import { teamEventCondition } from './team-event-condition';
 import { sql } from 'kysely';
-import type { Point } from 'csdm/common/types/point';
+import type { RoundEventPoint } from './team-heatmap-timeline';
 import type { TeamHeatmapFilter } from 'csdm/common/types/heatmap-filters';
 import { db } from 'csdm/node/database/database';
 
-export async function fetchTeamShotsPoints(filters: TeamHeatmapFilter): Promise<Point[]> {
+export async function fetchTeamShotsPoints(filters: TeamHeatmapFilter): Promise<RoundEventPoint[]> {
   let query = db
     .selectFrom('shots')
-    .select(['x', 'y'])
-    .innerJoin('matches', 'checksum', 'match_checksum')
+    .select(['shots.match_checksum', 'shots.round_number', 'shots.tick', 'x', 'y'])
+    .innerJoin('matches', 'matches.checksum', 'shots.match_checksum')
     .innerJoin('demos', 'demos.checksum', 'matches.checksum')
     .where('demos.map_name', '=', filters.mapName)
-    .where('player_team_name', '=', filters.teamName);
+    .where(teamEventCondition(filters, 'player_team_name', 'shots.player_steam_id', 'shots.round_number'));
 
   if (filters.startDate !== undefined && filters.endDate !== undefined) {
     query = query.where(sql<boolean>`demos.date between ${filters.startDate} and ${filters.endDate}`);

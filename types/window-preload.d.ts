@@ -92,6 +92,7 @@ declare global {
     closeWindow: () => void;
     minimizeWindow: () => void;
     onNavigateToPendingDownloads: (callback: () => void) => () => void;
+    onNavigateToSeason: (callback: (path: string) => void) => () => void;
     onNavigateToBans: (callback: () => void) => () => void;
     onUpdateDownloaded: (callback: () => void) => () => void;
     hasUpdateReadyToInstall: () => Promise<boolean>;

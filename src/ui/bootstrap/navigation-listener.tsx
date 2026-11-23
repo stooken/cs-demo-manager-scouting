@@ -19,6 +19,13 @@ type Props = {
 export function NavigationListener({ children }: Props) {
   const client = useWebSocketClient();
   const navigate = useNavigate();
+  useEffect(
+    () =>
+      window.csdm.onNavigateToSeason((path) => {
+        void navigate(path);
+      }),
+    [navigate],
+  );
   const navigateToMatch = useNavigateToMatch();
   const navigateToDemo = useNavigateToDemo();
   const demoPathArgument = useArgument(ArgumentName.DemoPath);

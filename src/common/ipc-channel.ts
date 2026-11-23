@@ -31,6 +31,7 @@ export const IPCChannel = {
   CanGoForward: 'can-go-forward',
   NavigateToPlayers: 'navigate-to-players',
   NavigateToPendingDownloads: 'navigate-to-pending-downloads',
+  NavigateToSeason: 'navigate-to-imported-season',
   NavigateToBans: 'navigate-to-bans',
   HasUpdateReadyToInstall: 'has-update-ready-to-install',
   UpdateDownloaded: 'update-downloaded',

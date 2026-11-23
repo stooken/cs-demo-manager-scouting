@@ -78,7 +78,7 @@ function HeatmapCanvas({ map, game, points, alpha, blur, radius, radarLevel }: H
   );
 }
 
-export function Heatmap() {
+export function Heatmap({ showEmptyMap = false }: { showEmptyMap?: boolean } = {}) {
   const { alpha, blur, radius, points, mapName, game, radarLevel } = useHeatmapContext();
   const maps = useMaps();
   const map = maps.find((map) => map.name === mapName);
@@ -91,7 +91,7 @@ export function Heatmap() {
     return <UnsupportedMap />;
   }
 
-  if (points.length === 0) {
+  if (points.length === 0 && !showEmptyMap) {
     return <Message message={<Trans>No data points were found for the current filters.</Trans>} />;
   }
 

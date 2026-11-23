@@ -1,11 +1,13 @@
+import { teamEventCondition } from './team-event-condition';
+import { RadarLevel } from 'csdm/ui/maps/radar-level';
 import { sql } from 'kysely';
 import { GrenadeName } from 'csdm/common/types/counter-strike';
-import type { Point } from 'csdm/common/types/point';
+import type { RoundEventPoint } from './team-heatmap-timeline';
 import type { TeamHeatmapFilter } from 'csdm/common/types/heatmap-filters';
 import { db } from 'csdm/node/database/database';
 import { HeatmapEvent } from 'csdm/common/types/heatmap-event';
 
-export async function fetchTeamGrenadePoints(filters: TeamHeatmapFilter): Promise<Point[]> {
+export async function fetchTeamGrenadePoints(filters: TeamHeatmapFilter): Promise<RoundEventPoint[]> {
   const grenadeNames: GrenadeName[] = [];
   switch (filters.event) {
     case HeatmapEvent.Smoke:
@@ -29,11 +31,19 @@ export async function fetchTeamGrenadePoints(filters: TeamHeatmapFilter): Promis
 
   let query = db
     .selectFrom('grenade_projectiles_destroy')
-    .select(['x', 'y'])
-    .innerJoin('matches', 'checksum', 'match_checksum')
+    .select([
+      'grenade_projectiles_destroy.match_checksum',
+      'grenade_projectiles_destroy.round_number',
+      'grenade_projectiles_destroy.tick',
+      'x',
+      'y',
+    ])
+    .innerJoin('matches', 'matches.checksum', 'grenade_projectiles_destroy.match_checksum')
     .innerJoin('demos', 'demos.checksum', 'matches.checksum')
     .where('demos.map_name', '=', filters.mapName)
-    .where('thrower_team_name', '=', filters.teamName)
+    .where(
+      teamEventCondition(filters, 'thrower_team_name', 'thrower_steam_id', 'grenade_projectiles_destroy.round_number'),
+    )
     .where('grenade_name', 'in', grenadeNames);
 
   if (filters.startDate !== undefined && filters.endDate !== undefined) {
@@ -78,6 +88,9 @@ export async function fetchTeamGrenadePoints(filters: TeamHeatmapFilter): Promis
       .where('checksum_tags.tag_id', 'in', filters.tagIds);
   }
 
+  if (filters.thresholdZ) {
+    query = query.where('z', filters.radarLevel === RadarLevel.Upper ? '>=' : '<', filters.thresholdZ);
+  }
   const points = query.execute();
 
   return points;

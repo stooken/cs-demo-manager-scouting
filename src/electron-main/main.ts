@@ -5,6 +5,8 @@ import { type BrowserWindow, type Tray } from 'electron';
 import { app, ipcMain } from 'electron';
 import path from 'node:path';
 import fs from 'fs-extra';
+import { getArgumentValueFromArray } from './get-argument-value-from-array';
+import { isSeasonHeatmapPath } from 'csdm/common/argument/is-season-heatmap-path';
 import { IPCChannel } from 'csdm/common/ipc-channel';
 import { listenForContextMenu } from './listen-for-context-menu';
 import { createTray } from './create-tray';
@@ -83,6 +85,8 @@ async function start() {
   });
 
   app.on('second-instance', async (event, args: string[]) => {
+    const seasonPath = getArgumentValueFromArray(args, ArgumentName.StartPath);
+    if (isSeasonHeatmapPath(seasonPath)) windowManager.setStartupArgument(ArgumentName.StartPath, seasonPath);
     const demoPath = getDemoPathFromArguments(args);
     if (typeof demoPath === 'string') {
       windowManager.setStartupArgument(ArgumentName.DemoPath, demoPath);
@@ -90,6 +94,7 @@ async function start() {
 
     const mainWindow = await windowManager.getOrCreateMainWindow();
     mainWindow.show();
+    if (isSeasonHeatmapPath(seasonPath)) mainWindow.webContents.send(IPCChannel.NavigateToSeason, seasonPath);
 
     if (typeof demoPath === 'string') {
       sendNavigateToDemo(mainWindow, demoPath);

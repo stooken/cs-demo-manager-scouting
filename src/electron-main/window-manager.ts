@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { BrowserWindow, app, shell } from 'electron';
 import { IPCChannel } from 'csdm/common/ipc-channel';
+import { isSeasonHeatmapPath } from 'csdm/common/argument/is-season-heatmap-path';
 import { ArgumentName } from 'csdm/common/argument/argument-name';
 import type { Argument } from 'csdm/common/types/argument';
 import { getArgumentValueFromArray } from 'csdm/electron-main/get-argument-value-from-array';
@@ -136,10 +137,12 @@ class WindowManager {
       mainWindow.webContents.openDevTools();
     }
 
+    const startPath = this.startupArguments.find((a) => a.name === ArgumentName.StartPath)?.value;
+    const hash = isSeasonHeatmapPath(startPath) ? startPath : undefined;
     if (IS_DEV) {
-      await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+      await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL + (hash ? '#' + hash : ''));
     } else {
-      await mainWindow.loadFile('index.html');
+      await mainWindow.loadFile('index.html', { hash });
     }
 
     listenForContextMenu(mainWindow);

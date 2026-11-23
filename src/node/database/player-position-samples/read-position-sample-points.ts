@@ -14,13 +14,22 @@ type Options = {
 
 // Reads the heatmap points from the sampled positions of one player during one round.
 export function readPositionSamplePoints(packed: PackedSamples, options: Options): Point[] {
+  const points: Point[] = [];
+  visitPositionSamplePoints(packed, options, (point) => points.push(point));
+  return points;
+}
+
+export function visitPositionSamplePoints(
+  packed: PackedSamples,
+  options: Options,
+  visit: (point: Point, tick: number) => void,
+) {
   const { startTick, endTick, thresholdZ, radarLevel } = options;
   const ticks = createDataView(packed.ticks);
   const x = createDataView(packed.x);
   const y = createDataView(packed.y);
   const z = createDataView(packed.z);
   const count = packed.ticks.byteLength / 4;
-  const points: Point[] = [];
 
   for (let index = 0; index < count; index++) {
     const offset = index * 4;
@@ -39,11 +48,12 @@ export function readPositionSamplePoints(packed: PackedSamples, options: Options
       }
     }
 
-    points.push({
-      x: x.getFloat32(offset),
-      y: y.getFloat32(offset),
-    });
+    visit(
+      {
+        x: x.getFloat32(offset),
+        y: y.getFloat32(offset),
+      },
+      tick,
+    );
   }
-
-  return points;
 }
